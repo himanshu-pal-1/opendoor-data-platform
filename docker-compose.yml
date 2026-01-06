@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: opendoor
+      POSTGRES_PASSWORD: opendoor_password
+      POSTGRES_DB: opendoor_data
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/init_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opendoor -d opendoor_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://opendoor:opendoor_password@db:5432/opendoor_data
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  prefect:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://opendoor:opendoor_password@db:5432/opendoor_data
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    command: prefect server start --host 0.0.0.0
+
+volumes:
+  postgres_data:
