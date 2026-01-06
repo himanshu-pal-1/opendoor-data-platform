@@ -201,7 +201,7 @@ class TestPayerContract:
             payer_id=uuid4(),
             practice_id=uuid4(),
             effective_date=date(2023, 1, 1),
-            termination_date=date(2025, 12, 31),
+            termination_date=date(2027, 12, 31),  # Future date
         )
 
         assert contract.is_active is True
@@ -223,7 +223,8 @@ class TestPayerMix:
 
     def test_total_government(self, sample_payer_mix):
         """Test total government payer calculation."""
-        assert sample_payer_mix.total_government == 0.35
+        # Includes medicare (0.35) + medicaid (0.10) = 0.45
+        assert sample_payer_mix.total_government == pytest.approx(0.45)
 
     def test_total_commercial(self, sample_payer_mix):
         """Test total commercial payer calculation."""

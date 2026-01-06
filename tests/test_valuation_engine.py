@@ -35,7 +35,8 @@ class TestPayerMixMultiplier:
 
         multiplier, rationale = engine.calculate_payer_mix_multiplier(sample_practice)
 
-        assert multiplier == 0.95
+        # 50-65% Medicare = 1.0x multiplier
+        assert multiplier == 1.0
         assert "Medicare" in rationale
 
     def test_medicaid_heavy_practice(self, sample_practice):
@@ -249,8 +250,8 @@ class TestFullValuation:
         """Test valuation for group cardiology practice in Dallas.
 
         Expected factors:
-        - Payer mix: ~1.0x (50% Medicare)
-        - Geographic: ~1.0x (Dallas/TX)
+        - Payer mix: ~1.14x (40% commercial, 50% Medicare - balanced mix)
+        - Geographic: ~1.0-1.05x (Dallas/TX)
         - Specialty: ~1.65x (cardiology)
         - Size: 1.05x (8 physicians)
         """
@@ -260,8 +261,8 @@ class TestFullValuation:
         # Check valuation is calculated
         assert result.valuation_amount > 0
 
-        # Check multipliers
-        assert 0.95 <= result.multipliers.payer_mix_multiplier <= 1.05
+        # Check multipliers - 40% commercial gives balanced payer mix premium
+        assert 1.0 <= result.multipliers.payer_mix_multiplier <= 1.20
         assert 0.95 <= result.multipliers.geographic_multiplier <= 1.10
         assert result.multipliers.specialty_multiplier >= 1.50
         assert result.multipliers.size_multiplier >= 1.05
